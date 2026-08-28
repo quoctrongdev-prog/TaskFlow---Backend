@@ -1,6 +1,5 @@
 import express from "express";
-import usersRouter from "./routes/users.js";
-import registerRouter from "./routes/registerRoute.js";
+import authRoute from "./routes/authRoute.js";
 import sql from "./config/db.js";
 
 const app = express();
@@ -24,7 +23,6 @@ app.get("/", async (_req, res) => {
   }
 });
 
-app.use("/users", usersRouter);
-app.use('/api', registerRouter);
+app.use("/api", authRoute);
 
 export default app;
