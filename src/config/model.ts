@@ -1,5 +1,5 @@
 interface User{
-    user_id: number;
+    user_id: string;
     name: string;
     email: string;
     password_hash: string;
@@ -7,4 +7,8 @@ interface User{
     email_verified: boolean;
 }
 
-export {User};
+interface UserToken {
+  user_id: string;
+}
+
+export {User, UserToken};
