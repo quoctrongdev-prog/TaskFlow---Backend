@@ -1,5 +1,6 @@
 import express from "express";
 import authRoute from "./routes/authRoute.js";
+import workRoute from './routes/workspaceRoute.js'
 import sql from "./config/db.js";
 
 const app = express();
@@ -23,6 +24,8 @@ app.get("/", async (_req, res) => {
   }
 });
 
-app.use("/api", authRoute);
+app.use("/api/auth", authRoute);
+app.use("/api/workspace", workRoute);
+
 
 export default app;
