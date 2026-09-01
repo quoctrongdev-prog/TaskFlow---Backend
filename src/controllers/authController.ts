@@ -1,7 +1,6 @@
 import sql from "../config/db.js";
 import ErrorHandler from "../config/errorHandler.js";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { Request, Response } from "express";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
@@ -72,15 +71,16 @@ const loginController = async (req: Request, res: Response) => {
       const expiredToken = refreshToken.expiredAt
 
       const updateRefreshToken = await sql`INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES
-      (${existUser[0].user_id}, ${refreshToken}, ${expiredToken}) RETURNING
+      (${existUser[0].user_id}, ${refreshToken.token}, ${expiredToken}) RETURNING
       token_id, user_id, token, expires_at, created_at`;
 
       return res.status(200).json({
         message: "Login Successfully!",
-        // userData: {
-        //   accessToken: accessToken,
-        //   refreshToken: refreshToken
-        // },
+        userData: {
+          accessToken: accessToken,
+          refreshToken: refreshToken.token,
+          expiredAt: refreshToken.expiredAt,
+        },
       });
     } else {
       return res.status(401).json({
