@@ -13,7 +13,7 @@ const generateAccessToken = async (userId: string) => {
       expiresIn: "15min",
     },
   );
-  console.log("token:", token);
+  // console.log("token:", token);
   return token;
 };
 
