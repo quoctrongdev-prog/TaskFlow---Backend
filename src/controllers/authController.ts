@@ -6,6 +6,8 @@ import dotenv from "dotenv";
 import { Request, Response } from "express";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
 import jwt from "jsonwebtoken";
+import { generateEmailToken } from "../utils/generateEmailToken.js";
+import { sendVerificationEmail } from "../utils/sendVerificationEmail.js";
 
 dotenv.config();
 
@@ -36,8 +38,19 @@ const registerController = async (req: Request, res: Response) => {
 
     const registerdUser = user[0];
 
+    const { token, tokenHash } = generateEmailToken();
+
+    //Hết hạn sau 15p: xem kỹ lại phần này------------
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15);
+
+    await sql`INSERT INTO email_verification_tokens (user_id, token, expires_at) VALUES 
+    (${registerdUser.user_id},${tokenHash}), ${expiresAt}`
+
+    await sendVerificationEmail(registerdUser.email, token)
+
     //Trả về một promise thì luôn luôn await để lấy kết quả
-    const accessToken = await generateAccessToken(registerdUser.user_id);
+    // const accessToken = await generateAccessToken(registerdUser.user_id);
 
     // console.log("accessToken", accessToken);
 
@@ -45,7 +58,6 @@ const registerController = async (req: Request, res: Response) => {
       message: "Register Successfully!",
       // userData: {
       //   registerdUser: registerdUser,
-      accessToken: accessToken,
       // },
     });
   } catch (error) {
@@ -169,56 +181,34 @@ const refreshController = async (req: Request, res: Response) => {
   }
 };
 
-// const logoutController = async (req: Request, res: Response) => {
-//   try {
-//     const refreshToken = req.cookies.refreshToken;
-//     if (!refreshToken) {
-//       throw new ErrorHandler(403, "Token is empty");
-//     }
-//     const tokenHash = crypto
-//       .createHash("sha256")
-//       .update(refreshToken)
-//       .digest("hex");
-
-//     const user =
-//       await sql`SELECT user_id FROM refresh_tokens WHERE token = ${tokenHash}`;
-//     console.log("userId: ", user);
-//     const userId = user[0].user_id;
-//     if (user.length > 0 && userId != null) {
-//       const update =
-//         await sql`UPDATE refresh_tokens SET is_revoked = true WHERE token = ${tokenHash}`;
-//       console.log("update: ", update);
-//     }
-
-//     res.clearCookie("refreshToken");
-//     return res.status(200).json({ message: "Logout successfully" });
-//   } catch (error) {
-//     console.log(error);
-//     res.status(500).json({
-//       message: "Error logout",
-//     });
-//   }
-// };
-
 const logoutController = async (req: Request, res: Response) => {
   try {
     const refreshToken = req.cookies.refreshToken;
     if (!refreshToken) {
       throw new ErrorHandler(403, "Token is empty");
     }
+    const tokenHash = crypto
+      .createHash("sha256")
+      .update(refreshToken)
+      .digest("hex");
 
-    const tokenHash = hashToken(refreshToken);
-
-    // Thu hồi token trực tiếp bằng UPDATE mà không cần SELECT trước
-    await sql`UPDATE refresh_tokens SET is_revoked = true WHERE token = ${tokenHash}`;
+    const user =
+      await sql`SELECT user_id FROM refresh_tokens WHERE token = ${tokenHash}`;
+    console.log("userId: ", user);
+    const userId = user[0].user_id;
+    if (user.length > 0 && userId != null) {
+      const update =
+        await sql`UPDATE refresh_tokens SET is_revoked = true WHERE token = ${tokenHash}`;
+      console.log("update: ", update);
+    }
 
     res.clearCookie("refreshToken");
     return res.status(200).json({ message: "Logout successfully" });
-  } catch (error: any) {
-    console.error(error);
-    res.clearCookie("refreshToken"); // Đảm bảo luôn xóa cookie nếu có lỗi xảy ra
-    return res.status(error.statusCode || 500).json({
-      message: error.message || "Error logout",
+  } catch (error) {
+    console.log(error);
+    res.clearCookie("refreshToken");
+    res.status(500).json({
+      message: "Error logout",
     });
   }
 };

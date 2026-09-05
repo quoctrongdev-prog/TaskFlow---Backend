@@ -55,7 +55,7 @@ const authMiddleware = (
     // console.log("Calling next()");
     next();
   } catch (error) {
-    return res.status(401).json({ message: "Error middleware" });
+    return res.status(401).json({ message: "Please log in" });
   }
 };
 
