@@ -25,21 +25,21 @@ const authMiddleware = (
 ) => {
   try {
     const authHeader = req.headers.authorization;
-    console.log("=== AUTH MIDDLEWARE ===");
-    console.log("Authorization:", req.headers.authorization);
+    // console.log("=== AUTH MIDDLEWARE ===");
+    // console.log("Authorization:", req.headers.authorization);
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
     const token = authHeader.split(" ")[1];
-    console.log("Auth Token Split: ", token);
+    // console.log("Auth Token Split: ", token);
 
     const decoded = jwt.verify(
       token,
       process.env.JWT_ACCESS_SECRET as string,
     ) as JwtPayload;
 
-    console.log("decoded jwt as jwtpayload:", decoded);
+    // console.log("decoded jwt as jwtpayload:", decoded);
 
     if (!decoded || !decoded.id) {
       return res.status(401).json({
@@ -48,14 +48,14 @@ const authMiddleware = (
     }
 
     const userId = decoded.id;
-    console.log("Id từ payload jwt đã được decoded:", userId);
+    // console.log("Id từ payload jwt đã được decoded:", userId);
 
     req.userId = userId;
-    console.log("User ID:", userId);
-    console.log("Calling next()");
+    // console.log("User ID:", userId);
+    // console.log("Calling next()");
     next();
   } catch (error) {
-    return res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({ message: "Please log in" });
   }
 };
 

@@ -1,6 +1,6 @@
 -- Bảng user
 CREATE TABLE users (
-    user_id UUID PRIMARY KEY,
+    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(50) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -12,7 +12,7 @@ CREATE TABLE users (
 
 -- Bảng workspaces
 CREATE TABLE workspaces (
-    workspace_id UUID PRIMARY KEY,
+    workspace_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(50) NOT NULL,
     description TEXT,
     created_by UUID NOT NULL,
@@ -27,7 +27,7 @@ CREATE TABLE workspaces (
 
 -- Bảng workspace members
 CREATE TABLE workspace_members (
-    workspace_member_id UUID PRIMARY KEY,
+    workspace_member_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL,
     user_id UUID NOT NULL,
     role VARCHAR(20) NOT NULL,
@@ -58,7 +58,7 @@ CREATE TABLE workspace_members (
 
 -- Bảng workspace invitations 
 CREATE TABLE workspace_invitations (
-    invitation_id UUID PRIMARY KEY,
+    invitation_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL,
     email VARCHAR(100) NOT NULL,
     role VARCHAR(20) NOT NULL,
@@ -94,7 +94,7 @@ CREATE TABLE workspace_invitations (
 
 -- Bảng projects
 CREATE TABLE projects (
-    project_id UUID PRIMARY KEY,
+    project_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     workspace_id UUID NOT NULL,
     name VARCHAR(150) NOT NULL,
     description TEXT,
@@ -136,9 +136,10 @@ CREATE TABLE projects (
 
 -- Bảng refresh tokens
 CREATE TABLE refresh_tokens (
-    token_id UUID PRIMARY KEY,
+    token_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     token VARCHAR(255) UNIQUE NOT NULL,
+    is_revoked BOOLEAN NOT NULL DEFAULT FALSE,
     expires_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
@@ -150,7 +151,7 @@ CREATE TABLE refresh_tokens (
 
 -- Bảng password reset tokens
 CREATE TABLE password_reset_tokens (
-    reset_id UUID PRIMARY KEY,
+    reset_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     token VARCHAR(255) UNIQUE NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
@@ -165,7 +166,7 @@ CREATE TABLE password_reset_tokens (
 
 -- Bảng tasks
 CREATE TABLE tasks (
-    task_id UUID PRIMARY KEY,
+    task_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id UUID NOT NULL,
     title VARCHAR(200) NOT NULL,
     description TEXT,
@@ -216,7 +217,7 @@ CREATE TABLE tasks (
 
 -- Bảng comments
 CREATE TABLE comments (
-    comment_id UUID PRIMARY KEY,
+    comment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     task_id UUID NOT NULL,
     user_id UUID NOT NULL,
     content TEXT NOT NULL,
