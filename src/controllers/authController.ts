@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 import { Request, Response } from "express";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
 import jwt from "jsonwebtoken";
-import { generateEmailToken } from "../utils/generateEmailToken.js";
+import { generateSecureToken } from "../utils/generateSecureToken.js";
 import { sendVerificationEmail } from "../utils/sendVerificationEmail.js";
 
 dotenv.config();
@@ -38,16 +38,18 @@ const registerController = async (req: Request, res: Response) => {
 
     const registerdUser = user[0];
 
-    const { token, tokenHash } = generateEmailToken();
+    const { token, tokenHash } = generateSecureToken();
 
     //Hết hạn sau 15p: xem kỹ lại phần này------------
+    //Thoi gian hien tai: vd 11:43:30
     const expiresAt = new Date();
+    //đặt phút của expiresAt thành phút thứ 15 sau phút hiện tại của expiresAt
     expiresAt.setMinutes(expiresAt.getMinutes() + 15);
 
     await sql`INSERT INTO email_verification_tokens (user_id, token, expires_at) VALUES 
-    (${registerdUser.user_id},${tokenHash}), ${expiresAt}`
+    (${registerdUser.user_id},${tokenHash}, ${expiresAt})`;
 
-    await sendVerificationEmail(registerdUser.email, token)
+    await sendVerificationEmail(registerdUser.email, token);
 
     //Trả về một promise thì luôn luôn await để lấy kết quả
     // const accessToken = await generateAccessToken(registerdUser.user_id);
@@ -59,12 +61,11 @@ const registerController = async (req: Request, res: Response) => {
       // userData: {
       //   registerdUser: registerdUser,
       // },
+      token: token, //Hồi comment lại
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({
-      message: "Error register",
-    });
+    throw error;
   }
 };
 
@@ -78,7 +79,7 @@ const loginController = async (req: Request, res: Response) => {
 
   try {
     const existUser =
-      await sql`SELECT user_id, email, password_hash FROM users WHERE email = ${emailLowerCase}`;
+      await sql`SELECT user_id, email, password_hash, email_verified FROM users WHERE email = ${emailLowerCase}`;
 
     if (existUser.length > 0) {
       const isValid = await bcrypt.compare(
@@ -87,6 +88,10 @@ const loginController = async (req: Request, res: Response) => {
       );
       if (!isValid) {
         return res.status(401).json("Invalid Password");
+      }
+
+      if (!existUser[0].email_verified) {
+        throw new ErrorHandler(400, "Please verify your email first");
       }
 
       const accessToken = await generateAccessToken(existUser[0].user_id);
@@ -122,7 +127,7 @@ const loginController = async (req: Request, res: Response) => {
         message: "Login Successfully!",
         // userData: {
         // user: existUser[0],
-        accessToken: accessToken,
+        accessToken: accessToken, //Hồi comment lại
         // refreshToken: refreshToken.token,
         // expiredAt: refreshToken.expiredAt,
         // },
@@ -134,9 +139,7 @@ const loginController = async (req: Request, res: Response) => {
     }
   } catch (error) {
     console.log(error);
-    res.status(500).json({
-      messsage: "Error Login",
-    });
+    throw error;
   }
 };
 
@@ -175,9 +178,7 @@ const refreshController = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({
-      message: "Refresh token error",
-    });
+    throw error;
   }
 };
 
@@ -195,8 +196,7 @@ const logoutController = async (req: Request, res: Response) => {
     const user =
       await sql`SELECT user_id FROM refresh_tokens WHERE token = ${tokenHash}`;
     console.log("userId: ", user);
-    const userId = user[0].user_id;
-    if (user.length > 0 && userId != null) {
+    if (user.length > 0) {
       const update =
         await sql`UPDATE refresh_tokens SET is_revoked = true WHERE token = ${tokenHash}`;
       console.log("update: ", update);
@@ -207,9 +207,7 @@ const logoutController = async (req: Request, res: Response) => {
   } catch (error) {
     console.log(error);
     res.clearCookie("refreshToken");
-    res.status(500).json({
-      message: "Error logout",
-    });
+    throw error;
   }
 };
 

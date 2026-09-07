@@ -33,6 +33,6 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
     }
   } catch (error) {
     console.log(error);
-    throw new ErrorHandler(500, "Invalid password");
+    throw error;
   }
 };
