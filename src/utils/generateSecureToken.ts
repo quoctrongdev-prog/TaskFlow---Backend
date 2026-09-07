@@ -1,6 +1,6 @@
 import crypto from "crypto";
 
-export const generateEmailToken = () => {
+export const generateSecureToken = () => {
   const token = crypto.randomBytes(32).toString("hex");
 
   const tokenHash = crypto
