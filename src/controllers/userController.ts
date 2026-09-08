@@ -6,6 +6,7 @@ import bcrypt from "bcrypt";
 
 export const changePassword = async (req: AuthRequest, res: Response) => {
   try {
+    //Cần mật khẩu hiện tại để tiếp tục đổi mật khẩu: đang thiếu
     const userId = req.userId;
     if (!userId) {
       throw new ErrorHandler(401, "Athentication required");
