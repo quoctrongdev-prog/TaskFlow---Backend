@@ -4,6 +4,6 @@ import { createWorkspace } from "../controllers/workspaceController.js";
 
 const router = express.Router();
 
-router.post("/create_workspace", authMiddleware, createWorkspace);
+router.post("/create-workspace", authMiddleware, createWorkspace);
 
 export default router;

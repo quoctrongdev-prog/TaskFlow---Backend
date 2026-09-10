@@ -61,7 +61,7 @@ const registerController = async (req: Request, res: Response) => {
       // userData: {
       //   registerdUser: registerdUser,
       // },
-      token: token, //Hồi comment lại
+      // token: token, //Hồi comment lại
     });
   } catch (error) {
     console.log(error);
@@ -159,7 +159,7 @@ const refreshController = async (req: Request, res: Response) => {
     if (userId.length === 0 || userId[0].is_revoked) {
       throw new ErrorHandler(403, "Invalid token");
     }
-    console.log("UserId từ refreshController: ", userId[0].user_id);
+    // console.log("UserId từ refreshController: ", userId[0].user_id);
 
     jwt.verify(
       refreshToken,

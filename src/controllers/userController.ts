@@ -37,3 +37,66 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
     throw error;
   }
 };
+
+export const getUser = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    if (userId === null) {
+      throw new ErrorHandler(404, "Unauthorized");
+    }
+
+    const record =
+      await sql`SELECT user_id, name, email, avatar_url, created_at, updated_at 
+      FROM users 
+      WHERE user_id = ${userId}`;
+    if (record.length === 0) {
+      throw new ErrorHandler(404, "User not found");
+    }
+    const user = record[0];
+
+    res.status(200).json({
+      message: "Get profile user successfully",
+      user: user,
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const updateUser = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.userId;
+    if (userId === null) {
+      throw new ErrorHandler(404, "Unauthorized");
+    }
+
+    const { name, email } = req.body;
+    if (!name || !email) {
+      throw new ErrorHandler(400, "Please fill all details");
+    }
+
+    const record =
+      await sql`SELECT user_id, name, email FROM users WHERE user_id = ${userId}`;
+    if (record.length === 0) {
+      throw new ErrorHandler(404, "User not found");
+    }
+    const user = record[0];
+
+    const newName = name || user.name;
+    const newEmail = email || user.email;
+
+    const update =
+      await sql`UPDATE users SET name = ${newName}, email = ${newEmail} 
+    WHERE user_id = ${userId}
+    RETURNING name, email`;
+
+    const updateUser = update[0];
+
+    res.status(200).json({
+      message: "Update user info successfully",
+      user: updateUser,
+    });
+  } catch (error) {
+    throw error;
+  }
+};

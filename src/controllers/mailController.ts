@@ -115,7 +115,7 @@ export const resendVerifyEmail = async (req: Request, res: Response) => {
 
     res.status(200).json({
       message: "Resend link successfully!",
-      token: token, // hồi comment lại
+      // token: token, // hồi comment lại
     });
   } catch (error) {
     console.log(error);
@@ -156,7 +156,7 @@ export const sendResetPassword = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       message: "If that email exists, we have sent a reset link",
-      token: token, //Hồi comment lại
+      // token: token, //Hồi comment lại
     });
   } catch (error) {
     throw error;
