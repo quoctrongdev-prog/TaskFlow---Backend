@@ -9,7 +9,7 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
     //Cần mật khẩu hiện tại để tiếp tục đổi mật khẩu: đang thiếu
     const userId = req.userId;
     if (!userId) {
-      throw new ErrorHandler(401, "Athentication required");
+      throw new ErrorHandler(401, "Unauthorized");
     }
     console.log("userId:", userId);
     const { password, newPassword } = req.body;
@@ -41,8 +41,8 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
 export const getUser = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId;
-    if (userId === null) {
-      throw new ErrorHandler(404, "Unauthorized");
+    if (!userId) {
+      throw new ErrorHandler(401, "Unauthorized");
     }
 
     const record =
@@ -66,8 +66,8 @@ export const getUser = async (req: AuthRequest, res: Response) => {
 export const updateUser = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId;
-    if (userId === null) {
-      throw new ErrorHandler(404, "Unauthorized");
+    if (!userId) {
+      throw new ErrorHandler(401, "Unauthorized");
     }
 
     const { name, email } = req.body;
@@ -100,3 +100,10 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
     throw error;
   }
 };
+
+export const updateAvatar = async (req: AuthRequest, res: Response) => {
+  const userId = req.userId;
+  if (!userId) {
+      throw new ErrorHandler(401, "Unauthorized");
+    }
+}

@@ -171,7 +171,7 @@ const refreshController = async (req: Request, res: Response) => {
       //}
     );
     const token = await generateAccessToken(userId[0].user_id);
-    console.log("Token từ refreshController: ", token);
+    // console.log("Token từ refreshController: ", token);
     res.json({
       message: "Generate access token successfully",
       accessToken: token,
