@@ -18,6 +18,7 @@ export interface AuthRequest extends Request {
 }
 //authMiddleware: user đã xác thực chưa trước khi được đi tiếp đến controller
 //Vào workspace, project khi đã được ủy quyền(mời) mới được xem, tương tác
+//là ID của người đang đăng nhập, được authMiddleware gắn vào request từ JWT.
 const authMiddleware = (
   req: AuthRequest,
   res: Response,

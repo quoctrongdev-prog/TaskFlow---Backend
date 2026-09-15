@@ -143,16 +143,26 @@ export const updateWorkspace = async (req: AuthRequest, res: Response) => {
       );
     }
 
-    const [isAdmin] = await sql`SELECT role from workspace_members
-    WHERE workspace_id = ${getWorkspaceId.workspace_id} AND user_id = ${user} AND role = 'Admin'`;
+    const [role] = await sql`SELECT role from workspace_members
+    WHERE workspace_id = ${getWorkspaceId.workspace_id} AND user_id = ${user}`;
 
-    if (!isAdmin) {
-      throw new ErrorHandler(403, "You don't have permission to update workspace");
+    if (!role) {
+      throw new ErrorHandler(
+        404,
+        "Workspace not found or you don't have access",
+      );
+    }
+
+    if (role.role !== "Admin") {
+      throw new ErrorHandler(
+        403,
+        "You don't have permission to update workspace",
+      );
     }
 
     const [updatingWorkspace] = await sql`UPDATE workspaces 
     SET name = ${name}, description = ${description}, updated_at = NOW()
-    WHERE workspace_id = ${getWorkspaceId.workspace_id} AND created_by = ${user};
+    WHERE workspace_id = ${getWorkspaceId.workspace_id};
     RETURNING name, description, updated_at`;
 
     res.status(200).json({
@@ -165,43 +175,120 @@ export const updateWorkspace = async (req: AuthRequest, res: Response) => {
 };
 
 export const updateRole = async (req: AuthRequest, res: Response) => {
+  // user
+  // ↓
+  // "Người đang làm hành động"
+  // → kiểm tra role của người này
+
+  // targetUserId
+  // ↓
+  // "Người bị tác động"
+  // → kiểm tra có tồn tại
+  // → update role của người này
   try {
+    //Kiem tra da dang nhap chua
+    //Người đang thực hiện hành động
     const user = req.userId;
     const workspaceId = req.params.workspaceId;
+    //Id nay la cua user (hoac cua nguoi khac) lay tu URL dung de xem user nay co trong workspace nay khong
+    //Va cung nhu dung de update role
+    //Người bị thay đổi role
+    const targetUserId = req.params.userId;
+    const { role } = req.body;
+
     if (!user) {
-      throw new ErrorHandler(401, "Athentication required");
+      throw new ErrorHandler(401, "Authentication required");
     }
 
-    const { role } = req.body;
     if (!role) {
       throw new ErrorHandler(400, "Please provide a role");
     }
 
-    const [getWorkspaceId] = await sql`SELECT workspace_id from workspaces 
-    WHERE workspace_id = ${workspaceId}`;
+    if (role !== "Admin" && role !== "Member") {
+      throw new ErrorHandler(400, "Invalid role");
+    }
 
-    if (!getWorkspaceId) {
+    const [currentMember] = await sql`SELECT role from workspace_members
+    WHERE workspace_id = ${workspaceId} AND user_id = ${user}`;
+
+    if (!currentMember) {
       throw new ErrorHandler(
         404,
         "Workspace not found or you don't have access",
       );
     }
 
-    const [isAdmin] = await sql`SELECT role from workspace_members
-    WHERE workspace_id = ${getWorkspaceId.workspace_id} AND user_id = ${user} AND role = 'Admin'`;
-
-    if (!isAdmin) {
+    if (currentMember.role !== "Admin") {
       throw new ErrorHandler(403, "You don't have permission to update role");
     }
 
+    const [targetMember] = await sql`SELECT workspace_id, user_id 
+    FROM workspace_members WHERE workspace_id = ${workspaceId} AND user_id = ${targetUserId}`;
+
+    if (!targetMember) {
+      throw new ErrorHandler(
+        404,
+        "Workspace not found or you don't have access",
+      );
+    }
+
+    if (user === targetUserId) {
+      throw new ErrorHandler(403, "You can't change your own role");
+    }
+
+    //Admin A có thể đổi role của Member B targetUserId.
     const [updatingRole] = await sql`UPDATE workspace_members
     SET role = ${role}
-    WHERE workspace_id = ${getWorkspaceId.workspace_id} AND user_id != ${user}
-    RETURNING role`;
+    WHERE workspace_id = ${workspaceId} AND user_id = ${targetUserId}
+    RETURNING user_id, role`;
 
     res.status(200).json({
       message: "Update role successfully",
       role: updatingRole,
+    });
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+export const deleteWorkspace = async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.userId;
+    const workspaceId = req.params.workspaceId;
+
+    if (!user) {
+      throw new ErrorHandler(401, "Authentication required");
+    }
+
+    if (!workspaceId) {
+      throw new ErrorHandler(
+        404,
+        "Workspace not found or you don't have access",
+      );
+    }
+
+    const [currentMember] = await sql`SELECT workspace_id, user_id, role
+    FROM workspace_members WHERE workspace_id = ${workspaceId} AND user_id = ${user}`;
+
+    if (!currentMember) {
+      throw new ErrorHandler(
+        404,
+        "Workspace not found or you don't have access",
+      );
+    }
+
+    if (currentMember.role !== "Admin") {
+      throw new ErrorHandler(
+        403,
+        "You don't have permission to delete this workspace",
+      );
+    }
+
+    await sql`DELETE FROM workspaces WHERE workspace_id = ${workspaceId}`;
+
+    res.status(200).json({
+      message: "Delete workspace successfully",
     });
   } catch (error) {
     throw error;
