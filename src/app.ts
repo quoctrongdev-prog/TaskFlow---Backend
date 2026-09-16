@@ -7,6 +7,8 @@ import sql from "./config/db.js";
 import cookieParser from "cookie-parser";
 import uploadRoute from "./routes/uploadRoute.js";
 // import cors from "cors";
+// GET = lấy/mở/xem
+// POST = thực hiện một action làm thay đổi dữ liệu.
 
 const app = express();
 
