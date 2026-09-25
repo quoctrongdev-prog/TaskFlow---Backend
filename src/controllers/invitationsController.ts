@@ -82,47 +82,122 @@ export const sendInvitation = async (req: AuthRequest, res: Response) => {
       invitation: invitation,
     });
   } catch (error) {
+    console.log(error)
     throw error;
   }
 };
 
 export const acceptInvitation = async (req: AuthRequest, res: Response) => {
   try {
-    const { token } = req.query;
-    const acceptingUserId = req.userId;
+    const userId = req.userId;
+    const { token } = req.body;
 
-    if (!token || typeof token !== "string") {
-      throw new ErrorHandler(400, "Verification token is required");
+    if (!userId) {
+      throw new ErrorHandler(401, "Authentication required");
     }
 
+    if (!token) {
+      throw new ErrorHandler(400, "Invitation token is required");
+    }
+
+    // Lấy thông tin user đang đăng nhập
+    const [user] = await sql`
+      SELECT user_id, email
+      FROM users
+      WHERE user_id = ${userId}
+    `;
+
+    if (!user) {
+      throw new ErrorHandler(404, "User not found");
+    }
+
+    // Hash token nhận từ client
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 
-    const verificationToken = await sql`
-      SELECT email, status, expires_at
+    // Tìm invitation
+    const [invitation] = await sql`
+      SELECT
+        invitation_id,
+        workspace_id,
+        email,
+        role,
+        status,
+        expires_at,
+        invited_by
       FROM workspace_invitations
       WHERE token = ${tokenHash}
     `;
 
-    if (verificationToken.length === 0) {
-      throw new ErrorHandler(400, "Invalid verification token");
+    if (!invitation) {
+      throw new ErrorHandler(400, "Invalid invitation token");
     }
 
-    const record = verificationToken[0];
-
-    if (new Date(record.expires_at) < new Date()) {
-      throw new ErrorHandler(400, "Verification token has expired");
+    // Kiểm tra invitation đã được sử dụng chưa
+    if (invitation.status !== "Pending") {
+      throw new ErrorHandler(400, "This invitation is no longer available");
     }
 
-    const [hasAccount] = await sql`SELECT user_id, email
-    FROM users WHERE email = ${record.email}`;
+    // Kiểm tra hết hạn
+    if (new Date(invitation.expires_at) < new Date()) {
+      await sql`
+        UPDATE workspace_invitations
+        SET status = 'Expired'
+        WHERE invitation_id = ${invitation.invitation_id}
+      `;
 
-    if(!hasAccount){
-      res.json({
-        "status": "REGISTER_REQUIRED"
-      })
+      throw new ErrorHandler(400, "This invitation has expired");
     }
 
-    
+    // Kiểm tra invitation có đúng email của user không
+    if (user.email !== invitation.email) {
+      throw new ErrorHandler(403, "This invitation is not for you");
+    }
 
-  } catch (error) {}
+    // Kiểm tra user đã là member chưa
+    const [existingMember] = await sql`
+      SELECT workspace_member_id
+      FROM workspace_members
+      WHERE workspace_id = ${invitation.workspace_id}
+        AND user_id = ${userId}
+    `;
+
+    if (existingMember) {
+      throw new ErrorHandler(409, "You are already a member of this workspace");
+    }
+
+    const [member] = await sql`
+    INSERT INTO workspace_members (
+    workspace_id,
+    user_id,
+    role,
+    invited_by
+    )
+  VALUES (
+    ${invitation.workspace_id},
+    ${userId},
+    'Member',
+    ${invitation.invited_by}
+  )
+  RETURNING
+    workspace_member_id,
+    workspace_id,
+    user_id,
+    role,
+    joined_at
+`;
+
+    // Đánh dấu invitation đã được accept
+    await sql`
+      UPDATE workspace_invitations
+      SET status = 'Accepted'
+      WHERE invitation_id = ${invitation.invitation_id}
+    `;
+
+    return res.status(200).json({
+      message: "Invitation accepted successfully",
+      member,
+    });
+  } catch (error) {
+    throw error;
+  }
 };

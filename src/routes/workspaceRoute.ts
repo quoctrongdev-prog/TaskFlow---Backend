@@ -1,7 +1,7 @@
 import express from "express";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import { createWorkspace, deleteWorkspace, getWorkspace, updateRole, updateWorkspace, workspaceDetail } from "../controllers/workspaceController.js";
-import { sendInvitation } from "../controllers/invitationsController.js";
+import { acceptInvitation, sendInvitation } from "../controllers/invitationsController.js";
 
 const router = express.Router();
 
@@ -12,5 +12,6 @@ router.patch("/update/:workspaceId", authMiddleware, updateWorkspace);
 router.patch("/update-role/:workspaceId/:userId", authMiddleware, updateRole);
 router.delete("/delete/:workspaceId", authMiddleware, deleteWorkspace);
 router.post("/send-invitation/:workspaceId", authMiddleware, sendInvitation)
+router.post("/accept-invitation/", authMiddleware, acceptInvitation)
 
 export default router;

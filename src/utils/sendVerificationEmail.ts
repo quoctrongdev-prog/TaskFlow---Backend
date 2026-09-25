@@ -76,7 +76,7 @@ export const sendInvitationEmail = async (
       to: email,
       subject: "Invitation to Task Flow",
 
-      text: `${inviterName} invited you to join ${workspaceName} on Task Flow.
+      text: `${inviterName} invited you to join ${workspaceName}.
       
       Accept invitation: ${inviteUrl}`,
 
@@ -85,7 +85,7 @@ export const sendInvitationEmail = async (
 
         <p>
           <strong>${inviterName}</strong> has invited you to join
-          <strong>${workspaceName}</strong>.
+          <strong>${workspaceName} project</strong>.
         </p>
 
         <p>
@@ -107,3 +107,4 @@ export const sendInvitationEmail = async (
     throw err;
   }
 };
+

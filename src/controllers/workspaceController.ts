@@ -133,7 +133,7 @@ export const updateWorkspace = async (req: AuthRequest, res: Response) => {
       throw new ErrorHandler(400, "Please fill all details");
     }
 
-    const [getWorkspaceId] = await sql`SELECT workspace_id from workspaces 
+    const [getWorkspaceId] = await sql`SELECT workspace_id FROM workspaces 
     WHERE workspace_id = ${workspaceId}`;
 
     if (!getWorkspaceId) {
@@ -143,7 +143,7 @@ export const updateWorkspace = async (req: AuthRequest, res: Response) => {
       );
     }
 
-    const [role] = await sql`SELECT role from workspace_members
+    const [role] = await sql`SELECT role FROM workspace_members
     WHERE workspace_id = ${getWorkspaceId.workspace_id} AND user_id = ${user}`;
 
     if (!role) {
@@ -162,7 +162,7 @@ export const updateWorkspace = async (req: AuthRequest, res: Response) => {
 
     const [updatingWorkspace] = await sql`UPDATE workspaces 
     SET name = ${name}, description = ${description}, updated_at = NOW()
-    WHERE workspace_id = ${getWorkspaceId.workspace_id};
+    WHERE workspace_id = ${getWorkspaceId.workspace_id}
     RETURNING name, description, updated_at`;
 
     res.status(200).json({
@@ -170,6 +170,7 @@ export const updateWorkspace = async (req: AuthRequest, res: Response) => {
       workspace: updatingWorkspace,
     });
   } catch (error) {
+    console.log(error)
     throw error;
   }
 };
