@@ -33,38 +33,6 @@ const upload = async (req: AuthRequest, res: Response) => {
 
     const user = record[0];
 
-    // Nếu user đã có avatar thì xóa avatar cũ
-    // public_id trên cloudinary
-    if (user.avatar_public_id) {
-      await cloudinary.uploader.destroy(user.avatar_public_id);
-    }
-
-    // console.log({
-    //   originalname: file.originalname,
-    //   mimetype: file.mimetype,
-    //   size: file.size,
-    // });
-
-    // Upload avatar mới lên Cloudinary
-    // Sử dụng Promise để xử lý upload ảnh
-    // Trả về secure_url và public_id của ảnh mới
-
-    // const cloud = await cloudinary.uploader.upload(dataURI, {
-    //   folder: "taskflow/avatars",
-    //   resource_type: "auto",
-    // });
-
-    // Chuyển buffer thành dạng datauri string để upload bằng cloudinary.uploader.upload
-    // const base64 = file.buffer.toString("base64");
-
-    // const dataUri = `data:${file.mimetype};base64,${base64}`;
-
-    // const cloud  = await cloudinary.uploader.upload(dataUri, {
-    //   folder: "avatars",
-    // });
-
-    // console.log("UPLOAD SUCCESS:", cloud);
-
     const cloud = await new Promise<any>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
@@ -82,39 +50,6 @@ const upload = async (req: AuthRequest, res: Response) => {
       stream.end(file.buffer);
     });
 
-    // const auth = Buffer.from(
-    //   `${process.env.API_CLOUD_KEY}:${process.env.API_CLOUD_SECRET}`,
-    // ).toString("base64");
-
-    // const bytes = new Uint8Array(file.buffer.length);
-    // bytes.set(file.buffer);
-
-    // const form = new FormData();
-
-    // form.append(
-    //   "file",
-    //   new Blob([bytes.buffer], { type: file.mimetype }),
-    //   file.originalname,
-    // );
-
-    // const response = await fetch(
-    //   `https://api.cloudinary.com/v1_1/${process.env.CLOUD_NAME}/image/upload`,
-    //   {
-    //     method: "POST",
-    //     headers: {
-    //       Authorization: `Basic ${auth}`,
-    //     },
-    //     body: form,
-    //   },
-    // );
-
-    // console.log("STATUS:", response.status);
-    // console.log("HEADERS:", Object.fromEntries(response.headers.entries()));
-
-    // const body = await response.text();
-
-    // console.log("BODY:", body);
-
     // Lưu thông tin avatar mới vào database
     await sql`
       UPDATE users
@@ -125,6 +60,12 @@ const upload = async (req: AuthRequest, res: Response) => {
       WHERE user_id = ${userId}
     `;
 
+    // Nếu user đã có avatar thì xóa avatar cũ
+    // public_id trên cloudinary
+    if (user.avatar_public_id) {
+      await cloudinary.uploader.destroy(user.avatar_public_id);
+    }
+
     return res.status(200).json({
       message: "Avatar uploaded successfully",
       url: cloud.secure_url,
@@ -132,16 +73,6 @@ const upload = async (req: AuthRequest, res: Response) => {
       // message: "Avatar uploaded successfully",
     });
   } catch (error: any) {
-    console.log("========== CLOUDINARY ERROR ==========");
-    console.log("message:", error?.message);
-    console.log("http_code:", error?.http_code);
-    console.log("name:", error?.name);
-    console.log("error:", error);
-    console.log("response:", error?.response);
-    console.log("headers:", error?.response?.headers);
-    console.log("body:", error?.response?.body);
-    console.log("======================================");
-
     return res.status(500).json({
       message: error?.message || "Upload failed",
       http_code: error?.http_code,

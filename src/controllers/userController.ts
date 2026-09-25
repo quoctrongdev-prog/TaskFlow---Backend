@@ -6,7 +6,6 @@ import bcrypt from "bcrypt";
 
 export const changePassword = async (req: AuthRequest, res: Response) => {
   try {
-    //Cần mật khẩu hiện tại để tiếp tục đổi mật khẩu: đang thiếu
     const userId = req.userId;
     if (!userId) {
       throw new ErrorHandler(401, "Unauthorized");
@@ -70,40 +69,32 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
       throw new ErrorHandler(401, "Unauthorized");
     }
 
-    const { name, email } = req.body;
-    if (!name || !email) {
-      throw new ErrorHandler(400, "Please fill all details");
+    const { name } = req.body;
+    if (!name) {
+      throw new ErrorHandler(400, "Name is required");
     }
 
     const record =
-      await sql`SELECT user_id, name, email FROM users WHERE user_id = ${userId}`;
+      await sql`SELECT user_id, name FROM users WHERE user_id = ${userId}`;
     if (record.length === 0) {
       throw new ErrorHandler(404, "User not found");
     }
     const user = record[0];
 
     const newName = name || user.name;
-    const newEmail = email || user.email;
 
     const update =
-      await sql`UPDATE users SET name = ${newName}, email = ${newEmail} 
+      await sql`UPDATE users SET name = ${newName}, updated_at = NOW() 
     WHERE user_id = ${userId}
-    RETURNING name, email`;
+    RETURNING name, updated_at`;
 
-    const updateUser = update[0];
+    const updatedUser = update[0];
 
     res.status(200).json({
       message: "Update user info successfully",
-      user: updateUser,
+      user: updatedUser,
     });
   } catch (error) {
     throw error;
   }
 };
-
-export const updateAvatar = async (req: AuthRequest, res: Response) => {
-  const userId = req.userId;
-  if (!userId) {
-      throw new ErrorHandler(401, "Unauthorized");
-    }
-}

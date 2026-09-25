@@ -114,7 +114,7 @@ const loginController = async (req: Request, res: Response) => {
 
       res.cookie("refreshToken", tokenRefresh, {
         httpOnly: true,
-        //secure: true chỉ chạy qua https bên frontend,
+        //secure: true yêu cầu cookie chỉ được gửi qua HTTPS connection.
         //nếu chạy localhost thì secure: true sẽ không lưu cookie
         //nên để false để test trước đã
         secure: false,

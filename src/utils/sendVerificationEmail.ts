@@ -1,6 +1,8 @@
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import transporter from "./mail.js";
+import { AuthRequest } from "../middlewares/authMiddleware.js";
+import sql from "../config/db.js";
 dotenv.config();
 
 //Gửi email thôi
@@ -24,12 +26,11 @@ export const sendVerificationEmail = async (email: string, token: string) => {
       </a>
 
       <p>This link will expire in 15 minutes.</p>`, // HTML body
-
     });
     console.log("Message sent: %s", info.messageId);
     // Preview URL is only available when using an Ethereal test account
     console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-    return info
+    return info;
   } catch (err) {
     console.error("Error while sending mail:", err);
   }
@@ -51,42 +52,59 @@ export const sendForgotPassword = async (email: string, token: string) => {
       </a>
 
       <p>This link will expire in 15 minutes.</p>`, // HTML body
-
     });
     console.log("Message sent: %s", info.messageId);
     // Preview URL is only available when using an Ethereal test account
     console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-    return info
+    return info;
   } catch (err) {
     console.error("Error while sending mail:", err);
   }
 };
 
-// export const sendVerificationEmail = async (email: string, token: string) => {
-//   const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+export const sendInvitationEmail = async (
+  email: string,
+  token: string,
+  inviterName: string,
+  workspaceName: string,
+) => {
+  try {
+    const inviteUrl = `${process.env.FRONTEND_URL}/invite-email?token=${token}`;
 
-//   const { data, error } = await resend.emails.send({
-//     from: process.env.EMAIL_FROM as string,
-//     to: email,
-//     subject: "Verify your TaskFlow account",
-//     html: `
-//       <h1>Welcome to TaskFlow!</h1>
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: email,
+      subject: "Invitation to Task Flow",
 
-//       <p>
-//         Please verify your email address by clicking the link below:
-//       </p>
+      text: `${inviterName} invited you to join ${workspaceName}.
+      
+      Accept invitation: ${inviteUrl}`,
 
-//       <a href="${verifyUrl}">
-//         Verify Email
-//       </a>
+      html: `
+        <h1>You've been invited to Task Flow!</h1>
 
-//       <p>This link will expire in 15 minutes.</p>
-//     `,
-//   });
+        <p>
+          <strong>${inviterName}</strong> has invited you to join
+          <strong>${workspaceName} project</strong>.
+        </p>
 
-//   if (error) {
-//     throw error;
-//   }
+        <p>
+          <a href="${inviteUrl}">
+            Accept Invitation
+          </a>
+        </p>
 
-//   return data;
-// };
+        <p>This invitation will expire in 15 minutes.</p>
+      `,
+    });
+
+    console.log("Message sent: %s", info.messageId);
+    console.log("Preview URL:", nodemailer.getTestMessageUrl(info));
+
+    return info;
+  } catch (err) {
+    console.error("Error while sending mail:", err);
+    throw err;
+  }
+};
+
